@@ -1,4 +1,4 @@
 LDFLAGS+=-lcppunit
 
 %.o: %.cpp
-	$(CXX) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
