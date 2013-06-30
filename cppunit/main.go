@@ -17,8 +17,8 @@ import (
 )
 
 type suiteWrap struct {
-	Name  string
-	Suite tap.Testsuite
+	Name  string    `json:"name"`
+	Suite Testsuite `json:"suite"`
 }
 
 var (
@@ -164,7 +164,7 @@ func main() {
 
 	builddir := CreateBuildDir(solsrc, tstsrc)
 
-	buildsuite := tap.Testsuite{Ok: false, Tests: make([]*tap.Testline, 1)}
+	buildsuite := Testsuite{Ok: false, Tests: make([]*tap.Testline, 1)}
 	test := &tap.Testline{Num: 1, Description: "Building"}
 	buildsuite.Tests[0] = test
 
@@ -229,7 +229,7 @@ func main() {
 			elog.Println("Could not parse: ", err)
 			continue
 		}
-		suites = append(suites, suiteWrap{fi.Name(), *suite})
+		suites = append(suites, suiteWrap{fi.Name(), Testsuite(*suite)})
 	}
 
 	os.RemoveAll(builddir)
