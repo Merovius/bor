@@ -9,10 +9,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 
+	"github.com/Merovius/bor/sandbox"
+	_ "github.com/Merovius/bor/sandbox/plain"
 	"github.com/Merovius/go-tap"
 )
 
@@ -157,7 +158,9 @@ func main() {
 		elog.Fatal("Not enough arguments")
 	}
 
-	ReadConfig()
+	if err = ReadConfig(); err != nil {
+		elog.Fatal(err)
+	}
 
 	solsrc := path.Clean(flag.Arg(0))
 	tstsrc := path.Clean(flag.Arg(1))
@@ -175,11 +178,11 @@ func main() {
 		_ = enc.Encode(suites)
 	}()
 
-	cmd := exec.Command("make", "all")
-	cmd.Dir = builddir
+	cmd := sandbox.Command(conf.SandboxDriver, "make", "all")
+	cmd.SetDir(builddir)
 	out, err := cmd.CombinedOutput()
 
-	if !cmd.ProcessState.Success() {
+	if !cmd.ProcessState().Success() {
 		test.Ok = false
 		test.Diagnostic += string(out)
 		suites = append(suites, suiteWrap{"Building", buildsuite})
@@ -209,8 +212,8 @@ func main() {
 			continue
 		}
 
-		cmd := exec.Command(path.Join(builddir, fi.Name()))
-		cmd.Dir = builddir
+		cmd := sandbox.Command(conf.SandboxDriver, path.Join(builddir, fi.Name()))
+		cmd.SetDir(builddir)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			elog.Println("Could not run testsuite: ", err)
