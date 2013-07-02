@@ -38,21 +38,26 @@ Using bor/cppunit
 You just start the `cppunit`-binary that was built when you got bor:
 
 ```shell
-$ cppunit [-config /path/to/alternate/config] /path/to/solution /path/to/testsuite
+$ cppunit [-config /path/to/alternate/config]
 ```
 
-`cppunit` will copy every .cpp-file from the solution-path to a temporary
-build-dir. It will then look in the testsuite-path for corresponding
-.cppunit-files (so for example if there is a file `exercise1.cpp` it will look
-for all files named like `exercise1\*.cppunit`). It will then build all
-solutions and link them with [cppunit_main.cpp](cppunit/cppunit_main.cpp)
-to create a testsuite-executable. This will then be run and the testresults
-will be collected and output in JSON-form.
+`cppunit` will listen on the configured interface/port for incoming
+connections. On every connection it expects a JSON-list of maps, each
+describing one solution with corresponding testsuites. Every solution has the
+properties `name` (an arbitrary (but unique) name slashes), `content` (the
+solution .cpp-file base64-encoded) and `suites` (a list of maps, each
+consisting of a unique `name` and a base64 encoded `content`). See
+[cppunit/example](cppunit/example) for an example of how to write
+solutions/testsuites and [cppunit/example.json] for the JSON-representation.
 
-See [cppunit/example](cppunit/example) for an example of how the solution and
-testsuite should be layed out.
+`cppunit` will then write every solution to a temporary build-dir. It will then
+build all solutions and link them with
+[cppunit_main.cpp](cppunit/cppunit_main.cpp) to create a testsuite-executable.
+This will then be run and the testresults will be collected and send back in
+JSON-form. After this it will close the connection, so you have to make a new
+one to start another testrun.
 
-Example output (with pretty indention):
+Example output:
 ```JSON
 [
   {

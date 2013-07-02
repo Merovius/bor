@@ -12,6 +12,8 @@ type Conf struct {
 	MakefileTemplate string
 	CppunitMain      string
 	SandboxDriver    string
+	TCPListen        string
+	NumConns         int
 }
 
 var (
@@ -21,6 +23,8 @@ var (
 		"/usr/share/bor/Makefile.tpl",
 		"/usr/share/bor/cppunit_main.cpp",
 		"plain",
+		"localhost:7066",
+		10,
 	}
 	confpath = flag.String("config", "/etc/bor.conf", "Config path")
 )
@@ -47,6 +51,14 @@ func ReadConfig() error {
 		conf.SandboxDriver = str
 	} else {
 		return fmt.Errorf("You need to specify SandboxDriver")
+	}
+	if str, err := cfg.GetString("cppunit", "TCPListen"); err == nil {
+		conf.TCPListen = str
+	} else {
+		return fmt.Errorf("You need to specify TCPListen")
+	}
+	if num, err := cfg.GetInt("cppunit", "NumConns"); err == nil {
+		conf.NumConns = num
 	}
 
 	return nil
