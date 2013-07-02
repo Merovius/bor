@@ -166,6 +166,7 @@ func main() {
 	tstsrc := path.Clean(flag.Arg(1))
 
 	builddir := CreateBuildDir(solsrc, tstsrc)
+	defer os.RemoveAll(builddir)
 
 	buildsuite := Testsuite{Ok: false, Tests: make([]*tap.Testline, 1)}
 	test := &tap.Testline{Num: 1, Description: "Building"}
@@ -234,6 +235,4 @@ func main() {
 		}
 		suites = append(suites, suiteWrap{fi.Name(), Testsuite(*suite)})
 	}
-
-	os.RemoveAll(builddir)
 }
