@@ -48,7 +48,8 @@ properties `name` (an arbitrary (but unique) name slashes), `content` (the
 solution .cpp-file base64-encoded) and `suites` (a list of maps, each
 consisting of a unique `name` and a base64 encoded `content`). See
 [cppunit/example](cppunit/example) for an example of how to write
-solutions/testsuites and [cppunit/example.json] for the JSON-representation.
+solutions/testsuites and [cppunit/example.json](cppunit/example.json) for the
+JSON-representation.
 
 `cppunit` will then write every solution to a temporary build-dir. It will then
 build all solutions and link them with
