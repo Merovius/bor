@@ -40,7 +40,7 @@ func HandleConnection(conn net.Conn) {
 
 	builddir, err := CreateBuildDir(sols)
 	if err != nil {
-		elog.Println("Could not create buildpath")
+		elog.Println("Could not create buildpath:", err)
 		return
 	}
 	defer os.RemoveAll(builddir)
