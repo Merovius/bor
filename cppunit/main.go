@@ -27,7 +27,8 @@ func init() {
 	elog = log.New(os.Stderr, "", log.LstdFlags)
 }
 
-func HandleConnection(conn net.Conn) {
+func HandleConnection(conn *net.TCPConn) {
+	conn.SetLinger(conf.Linger)
 	defer conn.Close()
 
 	var sols []Solution
@@ -129,7 +130,11 @@ func main() {
 		elog.Fatal(err)
 	}
 
-	l, err := net.Listen("tcp", conf.TCPListen)
+	addr, err := net.ResolveTCPAddr("tcp", conf.TCPListen)
+	if err != nil {
+		elog.Fatal(err)
+	}
+	l, err := net.ListenTCP("tcp", addr)
 	if err != nil {
 		elog.Fatal(err)
 	}
@@ -137,7 +142,7 @@ func main() {
 	log.Println("Listening on", conf.TCPListen)
 
 	for {
-		conn, err := l.Accept()
+		conn, err := l.AcceptTCP()
 		if err != nil {
 			elog.Println(err)
 			continue

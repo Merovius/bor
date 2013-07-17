@@ -14,6 +14,7 @@ type Conf struct {
 	SandboxDriver    string
 	TCPListen        string
 	NumConns         int
+	Linger           int
 }
 
 var (
@@ -25,6 +26,7 @@ var (
 		"plain",
 		"localhost:7066",
 		10,
+		5,
 	}
 	confpath = flag.String("config", "/etc/bor.conf", "Config path")
 )
@@ -59,6 +61,9 @@ func ReadConfig() error {
 	}
 	if num, err := cfg.GetInt("cppunit", "NumConns"); err == nil {
 		conf.NumConns = num
+	}
+	if num, err := cfg.GetInt("cppunit", "Linger"); err == nil {
+		conf.Linger = num
 	}
 
 	return nil
