@@ -8,15 +8,22 @@ import (
 	"net"
 	"os"
 	"path"
+	"time"
 
 	"github.com/Merovius/bor/sandbox"
 	_ "github.com/Merovius/bor/sandbox/plain"
 	"github.com/Merovius/go-tap"
 )
 
+type stats struct {
+	SystemTime time.Duration `json:"system_time"`
+	UserTime   time.Duration `json:"user_time"`
+}
+
 type suiteWrap struct {
 	Name  string    `json:"name"`
 	Suite Testsuite `json:"suite"`
+	Stats stats     `json:"stats"`
 }
 
 var (
@@ -46,9 +53,9 @@ func HandleConnection(conn *net.TCPConn) {
 	}
 	defer os.RemoveAll(builddir)
 
-	buildsuite := Testsuite{Ok: false, Tests: make([]*tap.Testline, 1)}
+	buildsuite := suiteWrap{Name: "Building", Suite: Testsuite{Ok: false, Tests: make([]*tap.Testline, 1)}}
 	test := &tap.Testline{Num: 1, Description: "Building"}
-	buildsuite.Tests[0] = test
+	buildsuite.Suite.Tests[0] = test
 
 	var suites []suiteWrap
 
@@ -60,17 +67,19 @@ func HandleConnection(conn *net.TCPConn) {
 	cmd := sandbox.Command(conf.SandboxDriver, "make", "all")
 	cmd.SetDir(builddir)
 	out, err := cmd.CombinedOutput()
+	buildsuite.Stats.SystemTime = cmd.ProcessState().SystemTime()
+	buildsuite.Stats.UserTime = cmd.ProcessState().UserTime()
 
 	if !cmd.ProcessState().Success() {
 		test.Ok = false
 		test.Diagnostic += string(out)
-		suites = append(suites, suiteWrap{"Building", buildsuite})
+		suites = append(suites, buildsuite)
 		return
 	}
 	test.Ok = true
-	buildsuite.Ok = true
+	buildsuite.Suite.Ok = true
 
-	suites = append(suites, suiteWrap{"Building", buildsuite})
+	suites = append(suites, buildsuite)
 
 	d, err := os.Open(builddir)
 	if err != nil {
@@ -98,6 +107,9 @@ func HandleConnection(conn *net.TCPConn) {
 			elog.Println("Could not run testsuite: ", err)
 			continue
 		}
+		utime := cmd.ProcessState().UserTime()
+		stime := cmd.ProcessState().SystemTime()
+		log.Printf("%d %d\n", utime, stime)
 
 		r := bytes.NewReader(out)
 		parser, err := tap.NewParser(r)
@@ -111,7 +123,11 @@ func HandleConnection(conn *net.TCPConn) {
 			elog.Println("Could not parse: ", err)
 			continue
 		}
-		suites = append(suites, suiteWrap{fi.Name(), Testsuite(*suite)})
+		wrap := suiteWrap{Name: fi.Name(), Suite: Testsuite(*suite)}
+		wrap.Stats.SystemTime = stime
+		wrap.Stats.UserTime = utime
+
+		suites = append(suites, wrap)
 	}
 
 	enc := json.NewEncoder(conn)

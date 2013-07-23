@@ -72,6 +72,10 @@ Example output:
           "ok": true
         }
       ]
+    },
+    "stats": {
+        "system_time": 184000000,
+        "user_time": 1820000000
     }
   },
   {
@@ -90,6 +94,10 @@ Example output:
           "ok": true
         }
       ]
+    },
+    "stats": {
+        "system_time": 0,
+        "user_time": 0
     }
   },
   {
@@ -118,6 +126,10 @@ Example output:
           "ok": true
         }
       ]
+    },
+    "stats": {
+        "system_time": 0,
+        "user_time": 0
     }
   }
 ]
@@ -126,3 +138,6 @@ Note the failure in `Exercise2Test::FibPos`: The person writing the test
 obviously expected `fib(0) == 0 && fib(1) == 1`, while the person writing the
 solution started with `fib(0) == 1 && fib(1) == 1`, thus producing an
 off-by-one error.
+
+The `stats`-property of a suite gives usage-statistics (currently the system-
+and usertime in nanoseconds).
