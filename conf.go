@@ -37,16 +37,16 @@ func ReadConfig() error {
 		return err
 	}
 
-	if str, err := cfg.GetString("cppunit", "TmpDir"); err == nil {
+	if str, err := cfg.GetString("default", "TmpDir"); err == nil {
 		conf.TmpDir = str
 	}
-	if str, err := cfg.GetString("cppunit", "TmpPrefix"); err == nil {
+	if str, err := cfg.GetString("default", "TmpPrefix"); err == nil {
 		conf.TmpPrefix = str
 	}
-	if str, err := cfg.GetString("cppunit", "MakefileTemplate"); err == nil {
+	if str, err := cfg.GetString("default", "MakefileTemplate"); err == nil {
 		conf.MakefileTemplate = str
 	}
-	if str, err := cfg.GetString("cppunit", "CppunitMain"); err == nil {
+	if str, err := cfg.GetString("default", "CppunitMain"); err == nil {
 		conf.CppunitMain = str
 	}
 	if str, err := cfg.GetString("default", "SandboxDriver"); err == nil {
@@ -54,15 +54,15 @@ func ReadConfig() error {
 	} else {
 		return fmt.Errorf("You need to specify SandboxDriver")
 	}
-	if str, err := cfg.GetString("cppunit", "TCPListen"); err == nil {
+	if str, err := cfg.GetString("default", "TCPListen"); err == nil {
 		conf.TCPListen = str
 	} else {
 		return fmt.Errorf("You need to specify TCPListen")
 	}
-	if num, err := cfg.GetInt("cppunit", "NumConns"); err == nil {
+	if num, err := cfg.GetInt("default", "NumConns"); err == nil {
 		conf.NumConns = num
 	}
-	if num, err := cfg.GetInt("cppunit", "Linger"); err == nil {
+	if num, err := cfg.GetInt("default", "Linger"); err == nil {
 		conf.Linger = num
 	}
 
