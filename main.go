@@ -75,6 +75,12 @@ func HandleConnection(conn *net.TCPConn) {
 	if !cmd.ProcessState().Success() {
 		test.Ok = false
 		test.Diagnostic += string(out)
+		if err != nil {
+			if test.Diagnostic[len(test.Diagnostic)-1] != '\n' {
+				test.Diagnostic += "\n"
+			}
+			test.Diagnostic += err.Error()
+		}
 		suites = append(suites, buildsuite)
 		return
 	}
