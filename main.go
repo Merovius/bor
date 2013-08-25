@@ -60,8 +60,10 @@ func HandleConnection(conn *net.TCPConn) {
 	var suites []suiteWrap
 
 	defer func() {
-		enc := json.NewEncoder(os.Stdout)
-		_ = enc.Encode(suites)
+		enc := json.NewEncoder(conn)
+		if err = enc.Encode(suites); err != nil {
+			elog.Println("Could not encode: ", err)
+		}
 	}()
 
 	cmd := sandbox.Command(conf.SandboxDriver, "make", "all")
@@ -128,13 +130,6 @@ func HandleConnection(conn *net.TCPConn) {
 		wrap.Stats.UserTime = utime
 
 		suites = append(suites, wrap)
-	}
-
-	enc := json.NewEncoder(conn)
-	err = enc.Encode(suites)
-	if err != nil {
-		elog.Println("Could not encode: ", err)
-		return
 	}
 }
 
