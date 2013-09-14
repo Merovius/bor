@@ -1,6 +1,7 @@
 package plain
 
 import (
+    goconf "code.google.com/p/goconf/conf"
 	"github.com/Merovius/bor/sandbox"
 	"os/exec"
 )
@@ -25,6 +26,10 @@ func (c Cmd) ProcessState() sandbox.ProcessState {
 
 func (d Driver) Command(name string, arg ...string) sandbox.Cmd {
 	return Cmd{exec.Command(name, arg...)}
+}
+
+func (d Driver) Config(_ *goconf.ConfigFile) error {
+	return nil
 }
 
 func init() {

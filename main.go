@@ -13,6 +13,7 @@ import (
 
 	"github.com/Merovius/bor/sandbox"
 	_ "github.com/Merovius/bor/sandbox/plain"
+	_ "github.com/Merovius/bor/sandbox/easysandbox"
 	"github.com/Merovius/go-tap"
 )
 
@@ -67,7 +68,7 @@ func HandleConnection(conn *net.TCPConn) {
 		}
 	}()
 
-	cmd := sandbox.Command(conf.SandboxDriver, "make", "all")
+	cmd := sandbox.Command(conf.MakeSandbox, "make", "all")
 	cmd.SetDir(builddir)
 	out, err := cmd.CombinedOutput()
 	buildsuite.Stats.SystemTime = cmd.ProcessState().SystemTime()
@@ -109,7 +110,7 @@ func HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 
-		cmd := sandbox.Command(conf.SandboxDriver, path.Join(builddir, fi.Name()))
+		cmd := sandbox.Command(conf.TestSandbox, path.Join(builddir, fi.Name()))
 		cmd.SetDir(builddir)
 		out, err := cmd.CombinedOutput()
 		if err != nil {

@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"fmt"
+	goconf "code.google.com/p/goconf/conf"
 	"io"
 	"time"
 )
@@ -12,6 +13,7 @@ var (
 
 type Driver interface {
 	Command(name string, arg ...string) Cmd
+	Config(*goconf.ConfigFile) error
 }
 
 type Cmd interface {
@@ -52,4 +54,14 @@ func Command(driver string, name string, arg ...string) Cmd {
 		return dr.Command(name, arg...)
 	}
 	panic(fmt.Errorf("No such Sandbox driver: %s", driver))
+}
+
+func Config(cfg *goconf.ConfigFile) error {
+	for _, dr := range drivers {
+		err := dr.Config(cfg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
