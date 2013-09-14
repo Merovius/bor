@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/Merovius/bor/sandbox"
@@ -76,7 +77,7 @@ func HandleConnection(conn *net.TCPConn) {
 		test.Ok = false
 		test.Diagnostic += string(out)
 		if err != nil {
-			if test.Diagnostic[len(test.Diagnostic)-1] != '\n' {
+			if len(test.Diagnostic) > 0 && !strings.HasSuffix(test.Diagnostic, "\n") {
 				test.Diagnostic += "\n"
 			}
 			test.Diagnostic += err.Error()
