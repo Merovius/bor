@@ -78,19 +78,19 @@ Example output:
       ]
     },
     "stats": {
-        "system_time": 184000000,
-        "user_time": 1820000000
+      "system_time": 164000000,
+      "user_time": 1612000000
     }
   },
   {
-    "name": "exercise2_tests",
+    "name": "solution2_tests",
     "suite": {
       "ok": false,
       "tests": [
         {
           "description": "Exercise2Test::FibPos",
-          "diagnostic": "equality assertion failed\nExpected: 2584\nActual  : 4181"
-          ,"ok": false
+          "diagnostic": "equality assertion failed\nExpected: 2584\nActual  : 4181",
+          "ok": false
         },
         {
           "description": "Exercise2Test::Fib1",
@@ -100,41 +100,21 @@ Example output:
       ]
     },
     "stats": {
-        "system_time": 0,
-        "user_time": 0
+      "system_time": 0,
+      "user_time": 0
     }
   },
   {
-    "name": "exercise1_tests",
+    "name": "solution1_tests",
     "suite": {
-      "ok": true,
-      "tests": [
-        {
-          "description": "Exercise1Test::PosChoosePos",
-          "diagnostic": "",
-          "ok": true
-        },
-        {
-          "description": "Exercise1Test::PosChooseO",
-          "diagnostic": "",
-          "ok": true
-        },
-        {
-          "description": "Exercise1Test::PosChooseSame",
-          "diagnostic": "",
-          "ok": true
-        },
-        {
-          "description": "Exercise1Test::PosChooseGreater",
-          "diagnostic": "",
-          "ok": true
-        }
-      ]
+      "ok": false,
+      "tests": null
     },
     "stats": {
-        "system_time": 0,
-        "user_time": 0
-    }
+      "system_time": 0,
+      "user_time": 0
+    },
+    "error": "Timeout"
   }
 ]
 ```
@@ -142,6 +122,12 @@ Note the failure in `Exercise2Test::FibPos`: The person writing the test
 obviously expected `fib(0) == 0 && fib(1) == 1`, while the person writing the
 solution started with `fib(0) == 1 && fib(1) == 1`, thus producing an
 off-by-one error.
+
+Also notice the failure of `solution1_tests`: The tests-property is null and
+instead there is an `error`-property (plus an output-property, if there is any
+`output`). This kind of in-band-signalling is used for notification of unusual
+failures during execution, for example a timeout or getting killed because of
+an invalid systemcall or a segmentation fault.
 
 The `stats`-property of a suite gives usage-statistics (currently the system-
 and usertime in nanoseconds).

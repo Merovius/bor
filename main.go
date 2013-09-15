@@ -23,9 +23,19 @@ type stats struct {
 }
 
 type suiteWrap struct {
-	Name  string    `json:"name"`
-	Suite Testsuite `json:"suite"`
-	Stats stats     `json:"stats"`
+	Name   string    `json:"name"`
+	Suite  Testsuite `json:"suite"`
+	Stats  stats     `json:"stats"`
+	Error  string    `json:"error,omitempty"`
+	Output string    `json:"output,omitempty"`
+}
+
+type cmdResult struct {
+	n      int
+	output []byte
+	stats  stats
+	err    error
+	suite  *Testsuite
 }
 
 var (
@@ -103,6 +113,10 @@ func HandleConnection(conn *net.TCPConn) {
 		return
 	}
 
+	ch := make(chan cmdResult)
+
+	numgo := 0
+	n := len(suites)
 	for _, fi := range fi {
 		mode := fi.Mode()
 		// Skip non-regular and non-executable files
@@ -110,35 +124,62 @@ func HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 
-		cmd := sandbox.Command(conf.TestSandbox, path.Join(builddir, fi.Name()))
-		cmd.SetDir(builddir)
-		out, err := sandbox.TimeoutCombinedOutput(cmd, time.Second)
-		if err != nil {
-			elog.Println("Could not run testsuite: ", err)
-			continue
-		}
-		utime := cmd.ProcessState().UserTime()
-		stime := cmd.ProcessState().SystemTime()
-		log.Printf("%d %d\n", utime, stime)
-
-		r := bytes.NewReader(out)
-		parser, err := tap.NewParser(r)
-		if err != nil {
-			elog.Println("Could not parse: ", err)
-			continue
-		}
-
-		suite, err := parser.Suite()
-		if err != nil {
-			elog.Println("Could not parse: ", err)
-			continue
-		}
-		wrap := suiteWrap{Name: fi.Name(), Suite: Testsuite(*suite)}
-		wrap.Stats.SystemTime = stime
-		wrap.Stats.UserTime = utime
-
+		wrap := suiteWrap{Name: fi.Name()}
 		suites = append(suites, wrap)
+
+		go func(name string, i int) {
+			res := cmdResult{n: i}
+			cmd := sandbox.Command(conf.TestSandbox, path.Join(builddir, name))
+			cmd.SetDir(builddir)
+			out, err := sandbox.TimeoutCombinedOutput(cmd, time.Second)
+			if err != nil {
+				elog.Println("Could not run testsuite: ", err)
+				res.err = err
+				ch <- res
+				return
+			}
+			res.stats.UserTime = cmd.ProcessState().UserTime()
+			res.stats.SystemTime = cmd.ProcessState().SystemTime()
+
+			r := bytes.NewReader(out)
+			parser, err := tap.NewParser(r)
+			if err != nil {
+				res.err = err
+				ch <- res
+				return
+			}
+
+			suite, err := parser.Suite()
+			if err != nil {
+				res.err = err
+				ch <- res
+				return
+			}
+
+			res.suite = (*Testsuite)(suite)
+
+			ch <- res
+			return
+		}(fi.Name(), n)
+		n++
+		numgo++
 	}
+
+	for ; numgo > 0; numgo-- {
+		res := <-ch
+		suite := &suites[res.n]
+
+		if res.err != nil {
+			suite.Error = res.err.Error()
+			suite.Stats = res.stats
+			suite.Output = string(res.output)
+			continue
+		}
+
+		suite.Stats = res.stats
+		suite.Suite = *res.suite
+	}
+	return
 }
 
 func main() {
