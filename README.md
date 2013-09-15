@@ -40,18 +40,23 @@ You just start the `bor`-binary that was built when you got bor:
 $ bor [-config /path/to/alternate/config]
 ```
 
-`bor` will listen on the configured interface/port for incoming
-connections. On every connection it expects a JSON-list of maps, each
-describing one solution with corresponding testsuites. Every solution has the
-properties `name` (an arbitrary (but unique) name slashes), `content` (the
-solution .cpp-file base64-encoded) and `suites` (a list of maps, each
-consisting of a unique `name` and a base64 encoded `content`). See
-[example](example) for an example of how to write
-solutions/testsuites and [example/example.json](example/example.json) for the
+`bor` will listen on the configured interface/port for incoming connections. On
+every connection it expects a JSON-dictionary with keys "suites" und "files".
+
+The latter should contain a dictionary of files, with the filename as the key
+and the gzipped, base64-encoded content of the file.
+
+The former should contain an array of dictionaries, each one describing one
+testsuite, having a "name" key and a "link" key, where the latter contains a
+list of files (without the .cpp-extension) to link together.
+
+See [examples/small](examples/small) for an example of how to write
+solutions/testsuites and
+[examples/small/example.json](examples/small/example.json) for the
 JSON-representation.
 
-`bor` will then write every solution to a temporary build-dir and build all
-solutions and link them with [share/cppunit_main.cpp](share/cppunit_main.cpp) to
+`bor` will then write all given files to a temporary build-dir and build all
+testsuites and link them with [share/cppunit_main.cpp](share/cppunit_main.cpp) to
 create a testsuite-executable.
 This will then be run and the testresults will be collected and send back in
 JSON-form. After this it will close the connection, so you have to make a new

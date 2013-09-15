@@ -2,35 +2,50 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
-type File []byte
+type File struct {
+	b []byte
+	r io.Reader
+}
 
 func (f *File) UnmarshalJSON(b64 []byte) error {
-	b64 = b64[1 : len(b64)-1]
-	*f = make([]byte, (len(b64)*3)/4)
-	base64.StdEncoding.Decode(*f, b64)
+	raw := bytes.NewReader(b64[1 : len(b64)-1])
+	dec := base64.NewDecoder(base64.StdEncoding, raw)
+	unc, err := gzip.NewReader(dec)
+	if err != nil {
+		return err
+	}
+	defer unc.Close()
+
+	content, err := ioutil.ReadAll(unc)
+	if err != nil {
+		return err
+	}
+	f.b = content
+	f.r = bytes.NewReader(content)
 	return nil
 }
 
 type Suite struct {
-	Name    string `json:"name"`
-	Content File   `json:"content"`
+	Name string   `json:"name"`
+	Link []string `json:"link"`
 }
 
-type Solution struct {
-	Name    string  `json:"name"`
-	Content File    `json:"content"`
-	Suites  []Suite `json:"suites"`
+type Message struct {
+	Suites []Suite         `json:"suites"`
+	Files  map[string]File `json:"files"`
 }
 
-func CreateBuildDir(sols []Solution) (build string, err error) {
+func CreateBuildDir(msg Message) (build string, err error) {
 	numgo := 0
 	godone := make(chan bool, 100)
 
@@ -56,42 +71,33 @@ func CreateBuildDir(sols []Solution) (build string, err error) {
 		return
 	}
 
-	var testprogs []string
-	for _, sol := range sols {
-		dst, err := os.Create(path.Join(build, sol.Name) + ".cpp")
+	// Write Files to temporary directory
+	for name, content := range msg.Files {
+		dst, err := os.Create(path.Join(build, name))
 		if err != nil {
 			return build, err
 		}
 
-		src := bytes.NewBuffer(sol.Content)
-
 		numgo++
-		go func() {
-			io.Copy(dst, src)
+		// We pass the reader as a parameter, to prevent a race with the closure
+		go func(r io.Reader) {
+			io.Copy(dst, r)
 			dst.Close()
 			godone <- true
-		}()
+		}(content.r)
+	}
 
-		for _, ts := range sol.Suites {
-			dst, err := os.Create(path.Join(build, ts.Name) + ".cpp")
-			if err != nil {
-				return build, err
-			}
-
-			src := bytes.NewBuffer(ts.Content)
-
-			numgo++
-			go func() {
-				io.Copy(dst, src)
-				dst.Close()
-				godone <- true
-			}()
-
-			fmt.Fprintf(mk, "%s: %s.cpp %s.o cppunit_main.o\n", ts.Name, ts.Name, sol.Name)
-			fmt.Fprintf(mk, "\t$(CXX) $(CXXFLAGS) $(LDFLAGS) -o %s %s.cpp %s.o cppunit_main.o\n\n", ts.Name, ts.Name, sol.Name)
-
-			testprogs = append(testprogs, ts.Name)
+	// Write Makefile
+	var testprogs []string
+	for _, suite := range msg.Suites {
+		if len(suite.Link) == 0 {
+			return build, fmt.Errorf("No files to link given in suite", suite.Name)
 		}
+		link := strings.Join(suite.Link, ".o ") + ".o"
+		fmt.Fprintf(mk, "%s: cppunit_main.o %s\n", suite.Name, link)
+		fmt.Fprintf(mk, "\t$(CXX) $(CXXFLAGS) $(LDFLAGS) -o %s %s cppunit_main.o\n\n", suite.Name, link)
+
+		testprogs = append(testprogs, suite.Name)
 	}
 
 	src, err := os.Open(conf.CppunitMain)
@@ -102,6 +108,7 @@ func CreateBuildDir(sols []Solution) (build string, err error) {
 	if err != nil {
 		return
 	}
+
 	numgo++
 	go func() {
 		io.Copy(dst, src)
@@ -110,15 +117,11 @@ func CreateBuildDir(sols []Solution) (build string, err error) {
 		godone <- true
 	}()
 
-	fmt.Fprintf(mk, "all:")
-	for _, t := range testprogs {
-		fmt.Fprintf(mk, " %s", t)
-	}
-	fmt.Fprintf(mk, "\n")
+	fmt.Fprintf(mk, "all: %s\n", strings.Join(testprogs, " "))
 	mk.Close()
 
-	for ; numgo > 0; <-godone {
-		numgo--
+	for ; numgo > 0; numgo-- {
+		<-godone
 	}
 	return build, nil
 }

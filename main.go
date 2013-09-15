@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/Merovius/bor/sandbox"
-	_ "github.com/Merovius/bor/sandbox/plain"
 	_ "github.com/Merovius/bor/sandbox/easysandbox"
+	_ "github.com/Merovius/bor/sandbox/plain"
 	"github.com/Merovius/go-tap"
 )
 
@@ -40,15 +40,15 @@ func HandleConnection(conn *net.TCPConn) {
 	conn.SetLinger(conf.Linger)
 	defer conn.Close()
 
-	var sols []Solution
+	var msg Message
 	dec := json.NewDecoder(conn)
-	err := dec.Decode(&sols)
+	err := dec.Decode(&msg)
 	if err != nil {
 		elog.Println("Could not parse JSON:", err)
 		return
 	}
 
-	builddir, err := CreateBuildDir(sols)
+	builddir, err := CreateBuildDir(msg)
 	if err != nil {
 		elog.Println("Could not create buildpath:", err)
 		return
