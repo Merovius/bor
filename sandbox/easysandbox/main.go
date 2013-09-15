@@ -27,6 +27,7 @@ var (
 	magic = []byte("<<entering SECCOMP mode>>\n")
 	path  = "/usr/lib/EasySandbox/EasySandbox.so"
 	heap  = 8388608
+	id = 0
 )
 
 // EasySandboxError represents an error with the EasySandbox-library (signified
@@ -48,12 +49,12 @@ type OffsetReadCloser struct {
 
 // NewOffsetReadCloser returns an OffsetReadCloser wrapping r and throwing away
 // the first n bytes
-func NewOffsetReadCloser(r io.ReadCloser, n int) OffsetReadCloser {
-	return OffsetReadCloser{r, 0, n}
+func NewOffsetReadCloser(r io.ReadCloser, n int) *OffsetReadCloser {
+	return &OffsetReadCloser{r, 0, n}
 }
 
 // Implement the io.Reader interface
-func (r OffsetReadCloser) Read(p []byte) (n int, err error) {
+func (r *OffsetReadCloser) Read(p []byte) (n int, err error) {
 	if r.n == r.i {
 		return r.r.Read(p)
 	}
@@ -70,8 +71,37 @@ func (r OffsetReadCloser) Read(p []byte) (n int, err error) {
 }
 
 // Implement the io.Closer interface
-func (r OffsetReadCloser) Close() error {
+func (r *OffsetReadCloser) Close() error {
 	return r.r.Close()
+}
+
+// OffsetWriter wraps an io.Writer, throwing away a number of bytes at the start
+type OffsetWriter struct {
+	w    io.Writer
+	i    int
+	n    int
+}
+
+func NewOffsetWriter(w io.Writer, n int) *OffsetWriter {
+	return &OffsetWriter{w, 0, n}
+}
+
+func (w *OffsetWriter) Write(p []byte) (n int, err error) {
+	if w.n == w.i {
+		return w.w.Write(p)
+	}
+
+	todo := w.n - w.i
+
+	if len(p) <= todo {
+		w.i += len(p)
+		return len(p), nil
+	}
+
+	m, err := w.w.Write(p[todo:])
+	w.i += m
+
+	return m + todo, nil
 }
 
 // Driver implements the sandbox-interface
@@ -133,6 +163,20 @@ func (c Cmd) SetDir(dir string) {
 
 func (c Cmd) ProcessState() sandbox.ProcessState {
 	return c.Cmd.ProcessState
+}
+
+func (c Cmd) Kill() error {
+	return c.Cmd.Process.Kill()
+}
+
+func (c Cmd) SetStdout(w io.Writer) {
+	stdout := NewOffsetWriter(w, len(magic))
+	c.Cmd.Stdout = stdout
+}
+
+func (c Cmd) SetStderr(w io.Writer) {
+	stderr := NewOffsetWriter(w, len(magic))
+	c.Cmd.Stderr = stderr
 }
 
 func (d Driver) Command(name string, arg ...string) sandbox.Cmd {

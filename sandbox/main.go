@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"bytes"
 	"fmt"
 	goconf "code.google.com/p/goconf/conf"
 	"io"
@@ -25,9 +26,12 @@ type Cmd interface {
 	StdinPipe() (io.WriteCloser, error)
 	StdoutPipe() (io.ReadCloser, error)
 	Wait() error
+	Kill() error
 
 	Dir() string
 	SetDir(string)
+	SetStdout(io.Writer)
+	SetStderr(io.Writer)
 
 	ProcessState() ProcessState
 }
@@ -64,4 +68,38 @@ func Config(cfg *goconf.ConfigFile) error {
 		}
 	}
 	return nil
+}
+
+type TimeoutError struct{}
+
+func (e TimeoutError) Error() string {
+    return "Timeout"
+}
+
+func TimeoutCombinedOutput(cmd Cmd, timeout time.Duration) ([]byte, error) {
+    outbuf := bytes.NewBuffer(make([]byte, 0, 8388608))
+
+    cmd.SetStdout(outbuf)
+    cmd.SetStderr(outbuf)
+
+    err := cmd.Start()
+    if err != nil {
+        return nil, err
+    }
+
+    to := time.After(timeout)
+    ch := make(chan error)
+
+    go func() {
+        err := cmd.Wait()
+        ch <- err
+    }()
+
+    select {
+    case <-to:
+        err = cmd.Kill()
+        return outbuf.Bytes(), TimeoutError{}
+    case err = <-ch:
+        return outbuf.Bytes(), err
+    }
 }

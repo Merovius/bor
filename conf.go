@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Merovius/bor/sandbox"
+	"time"
 )
 
 type Conf struct {
@@ -17,6 +18,8 @@ type Conf struct {
 	TCPListen        string
 	NumConns         int
 	Linger           int
+	MakeTimeout      time.Duration
+	TestTimeout      time.Duration
 }
 
 var (
@@ -30,6 +33,8 @@ var (
 		"localhost:7066",
 		10,
 		5,
+		5 * time.Second,
+		time.Second,
 	}
 	confpath = flag.String("config", "/etc/bor.conf", "Config path")
 )
@@ -68,6 +73,20 @@ func ReadConfig() error {
 	}
 	if num, err := cfg.GetInt("default", "Linger"); err == nil {
 		conf.Linger = num
+	}
+	if str, err := cfg.GetString("default", "MakeTimeout"); err == nil {
+		to, err := time.ParseDuration(str)
+		if err != nil {
+			return fmt.Errorf("Could not parse duration: %s", str)
+		}
+		conf.MakeTimeout = to
+	}
+	if str, err := cfg.GetString("default", "TestTimeout"); err == nil {
+		to, err := time.ParseDuration(str)
+		if err != nil {
+			return fmt.Errorf("Could not parse duration: %s", str)
+		}
+		conf.TestTimeout = to
 	}
 
 	if err = sandbox.Config(cfg); err != nil {

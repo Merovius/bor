@@ -3,6 +3,7 @@ package plain
 import (
     goconf "code.google.com/p/goconf/conf"
 	"github.com/Merovius/bor/sandbox"
+	"io"
 	"os/exec"
 )
 
@@ -22,6 +23,18 @@ func (c Cmd) SetDir(dir string) {
 
 func (c Cmd) ProcessState() sandbox.ProcessState {
 	return c.Cmd.ProcessState
+}
+
+func (c Cmd) Kill() error {
+	return c.Cmd.Process.Kill()
+}
+
+func (c Cmd) SetStderr(w io.Writer) {
+	c.Cmd.Stderr = w
+}
+
+func (c Cmd) SetStdout(w io.Writer) {
+	c.Cmd.Stdout = w
 }
 
 func (d Driver) Command(name string, arg ...string) sandbox.Cmd {

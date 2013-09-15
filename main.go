@@ -70,7 +70,7 @@ func HandleConnection(conn *net.TCPConn) {
 
 	cmd := sandbox.Command(conf.MakeSandbox, "make", "all")
 	cmd.SetDir(builddir)
-	out, err := cmd.CombinedOutput()
+	out, err := sandbox.TimeoutCombinedOutput(cmd, 5*time.Second)
 	buildsuite.Stats.SystemTime = cmd.ProcessState().SystemTime()
 	buildsuite.Stats.UserTime = cmd.ProcessState().UserTime()
 
@@ -112,7 +112,7 @@ func HandleConnection(conn *net.TCPConn) {
 
 		cmd := sandbox.Command(conf.TestSandbox, path.Join(builddir, fi.Name()))
 		cmd.SetDir(builddir)
-		out, err := cmd.CombinedOutput()
+		out, err := sandbox.TimeoutCombinedOutput(cmd, time.Second)
 		if err != nil {
 			elog.Println("Could not run testsuite: ", err)
 			continue
