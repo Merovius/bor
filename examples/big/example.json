@@ -1,11 +1,11 @@
 {
     "suites": [
         {
-            "name": "test_array",
+            "name": "TestArray",
             "link": [ "Account", "Bank", "AccountsArray", "AccountsList", "TestArray" ]
         },
         {
-            "name": "test_list",
+            "name": "TestList",
             "link": [ "Account", "Bank", "AccountsArray", "AccountsList", "TestList" ]
         }
     ],
