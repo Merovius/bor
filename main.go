@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"time"
 
@@ -78,7 +80,7 @@ func HandleConnection(conn *net.TCPConn) {
 		}
 	}()
 
-	cmd := sandbox.Command(conf.MakeSandbox, "make", "all")
+	cmd := sandbox.Command(conf.MakeSandbox, "make", "-j", fmt.Sprintf("%d", runtime.NumCPU()), "all")
 	cmd.SetDir(builddir)
 	out, err := sandbox.TimeoutCombinedOutput(cmd, 5*time.Second)
 	buildsuite.Stats.SystemTime = cmd.ProcessState().SystemTime()
