@@ -27,7 +27,7 @@ var (
 	magic = []byte("<<entering SECCOMP mode>>\n")
 	path  = "/usr/lib/EasySandbox/EasySandbox.so"
 	heap  = 8388608
-	id = 0
+	id    = 0
 )
 
 // EasySandboxError represents an error with the EasySandbox-library (signified
@@ -77,9 +77,9 @@ func (r *OffsetReadCloser) Close() error {
 
 // OffsetWriter wraps an io.Writer, throwing away a number of bytes at the start
 type OffsetWriter struct {
-	w    io.Writer
-	i    int
-	n    int
+	w io.Writer
+	i int
+	n int
 }
 
 func NewOffsetWriter(w io.Writer, n int) *OffsetWriter {

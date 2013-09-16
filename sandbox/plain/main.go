@@ -1,7 +1,7 @@
 package plain
 
 import (
-    goconf "code.google.com/p/goconf/conf"
+	goconf "code.google.com/p/goconf/conf"
 	"github.com/Merovius/bor/sandbox"
 	"io"
 	"os/exec"
