@@ -94,8 +94,8 @@ func CreateBuildDir(msg Message) (build string, err error) {
 			return build, fmt.Errorf("No files to link given in suite", suite.Name)
 		}
 		link := strings.Join(suite.Link, ".o ") + ".o"
-		fmt.Fprintf(mk, "%s: cppunit_main.o %s\n", suite.Name, link)
-		fmt.Fprintf(mk, "\t$(CXX) $(CXXFLAGS) $(LDFLAGS) -o %s %s cppunit_main.o\n\n", suite.Name, link)
+		fmt.Fprintf(mk, "%s: TAPListener.o %s\n", suite.Name, link)
+		fmt.Fprintf(mk, "\t$(CXX) $(CXXFLAGS) $(LDFLAGS) -o %s %s TAPListener.o\n\n", suite.Name, link)
 
 		testprogs = append(testprogs, suite.Name)
 	}
@@ -104,7 +104,7 @@ func CreateBuildDir(msg Message) (build string, err error) {
 	if err != nil {
 		return
 	}
-	dst, err := os.Create(path.Join(build, "cppunit_main.cpp"))
+	dst, err := os.Create(path.Join(build, "TAPListener.cpp"))
 	if err != nil {
 		return
 	}

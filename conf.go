@@ -27,7 +27,7 @@ var (
 		"",
 		"bor-",
 		"/usr/share/bor/Makefile.tpl",
-		"/usr/share/bor/cppunit_main.cpp",
+		"/usr/share/bor/TAPListener.cpp",
 		"plain",
 		"easysandbox",
 		"localhost:7066",

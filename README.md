@@ -56,7 +56,7 @@ solutions/testsuites and
 JSON-representation.
 
 `bor` will then write all given files to a temporary build-dir and build all
-testsuites and link them with [share/cppunit_main.cpp](share/cppunit_main.cpp) to
+testsuites and link them with [share/TAPListener.cpp](share/TAPListener.cpp) to
 create a testsuite-executable.
 This will then be run and the testresults will be collected and send back in
 JSON-form. After this it will close the connection, so you have to make a new
