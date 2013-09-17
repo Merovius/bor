@@ -1,8 +1,8 @@
-// This package implements the sandbox.Driver interface, injecting SECCOMPv1-mode
-// into run processes by means of the EasySandbox library. This means, that the
-// process can do no syscall but read(), write() (on stdin/stdout/stderr),
-// exit() and sigreturn(), effectively minimizing the effect it can have on the
-// rest of the system.
+// Package easysandbox implements the sandbox.Driver interface, injecting
+// SECCOMPv1-mode into run processes by means of the EasySandbox library. This
+// means, that the process can do no syscall but read(), write() (on
+// stdin/stdout/stderr), exit() and sigreturn(), effectively minimizing the
+// effect it can have on the rest of the system.
 //
 // Therefore this package is unfit for running processes that are
 // multithreaded, need to read from files, open network connection or do
@@ -53,7 +53,7 @@ func NewOffsetReadCloser(r io.ReadCloser, n int) *OffsetReadCloser {
 	return &OffsetReadCloser{r, 0, n}
 }
 
-// Implement the io.Reader interface
+// Read implements the io.Reader interface
 func (r *OffsetReadCloser) Read(p []byte) (n int, err error) {
 	if r.n == r.i {
 		return r.r.Read(p)
@@ -70,7 +70,7 @@ func (r *OffsetReadCloser) Read(p []byte) (n int, err error) {
 	return 0, err
 }
 
-// Implement the io.Closer interface
+// Close implements the io.Closer interface
 func (r *OffsetReadCloser) Close() error {
 	return r.r.Close()
 }
@@ -82,10 +82,13 @@ type OffsetWriter struct {
 	n int
 }
 
+// NewOffsetWriter returns an OffsetWriter wrapping w and throwing away the
+// first n bytes
 func NewOffsetWriter(w io.Writer, n int) *OffsetWriter {
 	return &OffsetWriter{w, 0, n}
 }
 
+// Write implements the io.Writer interface
 func (w *OffsetWriter) Write(p []byte) (n int, err error) {
 	if w.n == w.i {
 		return w.w.Write(p)
@@ -107,10 +110,13 @@ func (w *OffsetWriter) Write(p []byte) (n int, err error) {
 // Driver implements the sandbox-interface
 type Driver struct{}
 
+// Cmd wraps a *exec.Cmd in delicious sandboxing
 type Cmd struct {
 	*exec.Cmd
 }
 
+// CombinedOutput returns the combined stderr and stdout of the command,
+// stripping away the magic of EasySandbox
 func (c Cmd) CombinedOutput() ([]byte, error) {
 	out, err := c.Cmd.CombinedOutput()
 
@@ -127,6 +133,8 @@ func (c Cmd) CombinedOutput() ([]byte, error) {
 	return out, err
 }
 
+// Output returns the stdout of the command, stripping away the magic of
+// EasySandbox
 func (c Cmd) Output() ([]byte, error) {
 	out, err := c.Cmd.Output()
 	if err != nil {
@@ -141,44 +149,58 @@ func (c Cmd) Output() ([]byte, error) {
 	return out, nil
 }
 
+// StderrPipe returns a pipe connected to stderr and set up to throw away the
+// magic of EasySandbox
 func (c Cmd) StderrPipe() (io.ReadCloser, error) {
 	pipe, err := c.Cmd.StderrPipe()
 	r := NewOffsetReadCloser(pipe, len(magic))
 	return r, err
 }
 
+// StdoutPipe returns a pipe connected to stdout and set up to throw away the
+// magic of EasySandbox
 func (c Cmd) StdoutPipe() (io.ReadCloser, error) {
 	pipe, err := c.Cmd.StdoutPipe()
 	r := NewOffsetReadCloser(pipe, len(magic))
 	return r, err
 }
 
+// Dir returns the current working directory of the command
 func (c Cmd) Dir() string {
 	return c.Cmd.Dir
 }
 
+// SetDir sets the working directory of the command
 func (c Cmd) SetDir(dir string) {
 	c.Cmd.Dir = dir
 }
 
+// ProcessState returns the *os.ProcessState of the underlying *exec.Cmd
 func (c Cmd) ProcessState() sandbox.ProcessState {
 	return c.Cmd.ProcessState
 }
 
+// Kill sends a SIGKILL to the underlying *os.Process
 func (c Cmd) Kill() error {
 	return c.Cmd.Process.Kill()
 }
 
+// SetStdout sets the stdout to the given writer, throwing away the EasySandbox
+// magic
 func (c Cmd) SetStdout(w io.Writer) {
 	stdout := NewOffsetWriter(w, len(magic))
 	c.Cmd.Stdout = stdout
 }
 
+// SetStdout sets the stderr to the given writer, throwing away the EasySandbox
+// magic
 func (c Cmd) SetStderr(w io.Writer) {
 	stderr := NewOffsetWriter(w, len(magic))
 	c.Cmd.Stderr = stderr
 }
 
+// Command returns a new command-struct, with the necessary environment for
+// EasySandbox
 func (d Driver) Command(name string, arg ...string) sandbox.Cmd {
 	ret := Cmd{exec.Command(name, arg...)}
 	ret.Cmd.Env = []string{
@@ -189,6 +211,8 @@ func (d Driver) Command(name string, arg ...string) sandbox.Cmd {
 	return ret
 }
 
+// Config configures the easysandbox package. It extracts the location of the
+// shared object and the wanted heapsize
 func (d Driver) Config(cfg *goconf.ConfigFile) error {
 	if str, err := cfg.GetString("easysandbox", "Location"); err == nil {
 		path = str
@@ -203,6 +227,7 @@ func (d Driver) Config(cfg *goconf.ConfigFile) error {
 	return nil
 }
 
+// init registers the easysandbox driver
 func init() {
 	sandbox.Register("easysandbox", Driver{})
 }

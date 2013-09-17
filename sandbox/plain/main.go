@@ -1,3 +1,5 @@
+// Package plain implements the sandbox-interface just wrapping os/exec (i.e.
+// providing no sandboxing)
 package plain
 
 import (
