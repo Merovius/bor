@@ -12,7 +12,7 @@ type Conf struct {
 	TmpDir           string
 	TmpPrefix        string
 	MakefileTemplate string
-	CppunitMain      string
+	TAPListener      string
 	MakeSandbox      string
 	TestSandbox      string
 	TCPListen        string
@@ -54,8 +54,8 @@ func ReadConfig() error {
 	if str, err := cfg.GetString("default", "MakefileTemplate"); err == nil {
 		conf.MakefileTemplate = str
 	}
-	if str, err := cfg.GetString("default", "CppunitMain"); err == nil {
-		conf.CppunitMain = str
+	if str, err := cfg.GetString("default", "TAPListener"); err == nil {
+		conf.TAPListener = str
 	}
 	if str, err := cfg.GetString("default", "MakeSandbox"); err == nil {
 		conf.MakeSandbox = str

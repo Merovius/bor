@@ -121,7 +121,7 @@ func CreateBuildDir(msg Message) (build string, err error) {
 	}
 
 	// We copy the TAPListener.cpp into the builddirectory
-	src, err := os.Open(conf.CppunitMain)
+	src, err := os.Open(conf.TAPListener)
 	if err != nil {
 		return
 	}
