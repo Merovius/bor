@@ -10,6 +10,7 @@ import (
 
 var (
 	drivers = make(map[string]Driver)
+	bufsize = 8388608
 )
 
 // Driver implement everything we need from a sandbox
@@ -70,6 +71,9 @@ func Command(driver string, name string, arg ...string) Cmd {
 
 // Config calls the Config-method of all registered drivers
 func Config(cfg *goconf.ConfigFile) error {
+    if num, err := cfg.GetInt("default", "BufferSize"); err == nil {
+		bufsize = num
+    }
 	for _, dr := range drivers {
 		err := dr.Config(cfg)
 		if err != nil {
@@ -91,7 +95,7 @@ func (e TimeoutError) Error() string {
 // is given, after which the Process is automatically killed
 func TimeoutCombinedOutput(cmd Cmd, timeout time.Duration) ([]byte, error) {
 	// We need to buffer the output
-	outbuf := bytes.NewBuffer(make([]byte, 0, 8388608))
+	outbuf := bytes.NewBuffer(make([]byte, 0, bufsize))
 
 	cmd.SetStdout(outbuf)
 	cmd.SetStderr(outbuf)
